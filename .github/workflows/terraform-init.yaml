@@ -1,0 +1,43 @@
+name: Terraform Plan
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  terraform-plan:
+    runs-on: [self-hosted, linux, corp-intranet]
+    timeout-minutes: 20
+
+    defaults:
+      run:
+        working-directory: .
+
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "false"
+
+    steps:
+      - name: Check out configuration
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+          terraform_wrapper: false
+
+      - name: Initialize Terraform
+        env:
+          GIT_CONFIG_COUNT: "1"
+          GIT_CONFIG_KEY_0: "url.https://github.corp.intranet/LumenFederal/.insteadOf"
+          GIT_CONFIG_VALUE_0: "https://github.com/LumenTech-Prod/"
+        run: terraform init -input=false -no-color
+
+      - name: Validate configuration
+        run: terraform validate -no-color
+
+      - name: Create plan
+        run: terraform plan -input=false -no-color -out=tfplan
